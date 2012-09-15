@@ -38,13 +38,20 @@ def pwmSetFrequency(frequencyHz):
 
 def pwmRun(start):
     """ Starts or Stops PWM. """
-    writeDevice("/sys/class/pwm/ehrpwm.1:0/run", start)
+    device = "/sys/class/pwm/ehrpwm.1:0/run"
+    with open(device,"r") as f:
+		s = int(f.read()) #first read current state
+		f.close()
+		#it is an error if you try run/stop PWM if it's in required state
+		if( s != start ):
+			writeDevice(device, start)
 
 setReg(CM_PER_EPWMSS1_CLKCTRL, 0x2) #activate PWM clock
 writeDevice("/sys/kernel/debug/omap_mux/gpmc_a2", 6) #set mux mode for PWM pin (EHRPWM1:0 it's pin 14 on P9)
 
 freq=10000 #set to maximum LED driver can handle
 
+pwmRun(0) #stop PWM
 pwmSetDutyPercent(0) #set to 0 before setting frequency
 pwmSetFrequency(freq) #10kHz 
 pwmRun(1) #start PWM (duty is 0, so LED is off)
